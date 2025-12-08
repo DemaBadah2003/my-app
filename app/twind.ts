@@ -3,53 +3,74 @@
 import { setup, tw } from 'twind';
 
 setup({
+
   theme: {
     extend: {
       colors: {
-        primary: '#1e40af',
+        // الألوان الأساسية للثيم البنفسجي المستخدم في Dashboard
+        primary: '#6b21a8',        // بنفسجي قوي (Header)
+        secondary: '#4c1d95',      // بنفسجي داكن (Sidebar)
+        accent: '#a855f7',         // بنفسجي فاتح جميل للأزرار
+        softPurple: '#ede9fe',     // خلفيات ناعمة
+        lightPurple: '#f3e8ff',    // خلفية عامة
 
-        // ⭐ موف فاتح جداً – للخلفية
-        lightPurple: '#f3e8ff',
+        sidebarDark: '#2e1065',    // درجة أغمق للسايدبار
+        sidebarLight: '#5b21b6',   // درجة أفتح للسايدبار
+
+        tableHeader: '#f3e8ff',    // هيدر الجدول
+        hoverPurple: '#faf5ff',    // صف عند المرور
+        
+        danger: '#dc2626',         // أحمر للتنبيهات
+        success: '#16a34a',        // أخضر
+        warning: '#d97706',        // أصفر
       },
     },
   },
 
   preflight: {
-    // ⭐ خلفية موف فاتح لكل الموقع
+    // ⭐ خلفية الموقع بالكامل — درجات موف خفيفة
     body: {
       backgroundColor: '#f3e8ff',
+      color: '#1f1f1f',
+      fontFamily: 'system-ui, sans-serif',
     },
 
-    // input
     input: {
       color: '#4b0082',
       fontWeight: '600',
     },
 
-    // placeholder
     'input::placeholder': {
-      color: '#4b0082',
-      opacity: '1',
+      color: '#6b21a8',
+      opacity: '0.8',
     },
 
-    // select
     select: {
       color: '#4b0082',
       fontWeight: '600',
     },
 
-    // العنوان
-    h2: {
-      color: '#4b0082',
+    h1: {
+      color: '#4c1d95',
       fontWeight: '700',
     },
 
-    // ⭐ label ـ الآن بنفس قوة ووضوح العنوان
+    h2: {
+      color: '#4c1d95',
+      fontWeight: '700',
+    },
+
     label: {
       color: '#4b0082',
       fontWeight: '700',
-      fontSize: '1.125rem',   // ← نفس حجم text-lg
+      fontSize: '1.125rem',
       lineHeight: '1.75rem',
+    },
+
+    // ⭐ أزرار عامة
+    button: {
+      cursor: 'pointer',
+      transition: '0.2s ease',
     },
   },
 });

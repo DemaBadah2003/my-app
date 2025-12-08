@@ -1,21 +1,13 @@
-import { NextResponse } from "next/server";
 import fs from "fs";
-import path from "path";
-
-const dirPath = path.join(process.cwd(), "app/api/data");
-const filePath = path.join(dirPath, "users.json");
-
-// تأكد أن الملف والمجلد موجود
-function ensureFileExists() {
-  if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
-  if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, JSON.stringify([], null, 2));
-}
+import { NextResponse } from "next/server";
+import { User } from "../updataUsers/route";
+import { ensureFileExists, checkDuplicates, userSchema, filePath, addUser } from "@/app/helpers/fileHelper"; // استدعاء الملف المشترك
+import * as yup from "yup";
 
 export async function GET() {
   try {
     ensureFileExists();
-    const data = fs.readFileSync(filePath, "utf8");
-    const users = JSON.parse(data);
+    const users: User[] = JSON.parse(fs.readFileSync(filePath, "utf-8"));
     return NextResponse.json({ users }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -25,35 +17,32 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     ensureFileExists();
-    const body = await req.json();
+    const body: { action: "add" | "delete" | "deleteAll"; data: any } = await req.json();
     const { action, data } = body;
 
-    const fileData = fs.readFileSync(filePath, "utf8");
-    let users = JSON.parse(fileData);
+    let users: User[] = JSON.parse(fs.readFileSync(filePath, "utf-8"));
 
-    if (action === "update") {
-      const { oldEmail, newData } = data;
-      const index = users.findIndex((u: any) => u.email === oldEmail);
-      if (index === -1) return NextResponse.json({ success: false, message: "User not found" });
-      users[index] = newData;
-      fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
-      return NextResponse.json({ success: true, message: "User updated successfully" });
+    // -------------------- ADD --------------------
+    if (action === "add") {
+      const result = await addUser(data); // استدعاء دالة الإضافة من الملف المشترك
+      return NextResponse.json(result.json, { status: result.status });
     }
 
+    // -------------------- DELETE --------------------
     if (action === "delete") {
-      const { email } = data;
-      users = users.filter((u: any) => u.email !== email);
+      users = users.filter(u => u.email !== data.email);
       fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
       return NextResponse.json({ success: true, message: "User deleted successfully" });
     }
 
+    // -------------------- DELETE ALL --------------------
     if (action === "deleteAll") {
       fs.writeFileSync(filePath, JSON.stringify([], null, 2));
       return NextResponse.json({ success: true, message: "All users deleted successfully" });
     }
 
-    return NextResponse.json({ success: false, message: "Unknown action" });
+    return NextResponse.json({ success: false, message: "Unknown action" }, { status: 400 });
   } catch (err: any) {
-    return NextResponse.json({ success: false, message: err.message });
+    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
 }
