@@ -5,7 +5,7 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { tw } from "../twind";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FaEdit, FaTrash, FaEllipsisV } from "react-icons/fa";
 
 export interface User {
   id: number;
@@ -23,6 +23,8 @@ export default function UsersPage() {
   const [searchName, setSearchName] = useState("");
   const [searchCategory, setSearchCategory] = useState("");
   const [showSidebar, setShowSidebar] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [activeMenu, setActiveMenu] = useState<number | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -36,9 +38,17 @@ export default function UsersPage() {
 
   useEffect(() => { fetchUsers(); }, []);
 
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
   const handleEdit = (user: User) => { 
     setEditingEmail(user.email); 
     setEditData({ ...user }); 
+    setActiveMenu(null);
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -224,16 +234,69 @@ export default function UsersPage() {
                       </select>
                     ) : user.category}
                   </td>
-                  <td className={tw`border border-purple-200 p-1 md:p-2 flex flex-wrap gap-1 justify-center items-center table-actions`}>
-                    {editingEmail === user.email ? (
-                      <button onClick={handleSave} className={tw`bg-green-600 text-white p-1 md:p-2 rounded hover:bg-green-700 text-xs md:text-sm`} title="Save">Save</button>
-                    ) : (
-                      <>
-                        <button onClick={() => handleEdit(user)} className={tw`bg-yellow-500 text-white p-1 md:p-2 rounded hover:bg-yellow-600 text-xs md:text-sm`} title="Edit"><FaEdit /></button>
-                        <button onClick={() => handleDelete(user.email)} className={tw`bg-red-500 text-white p-1 md:p-2 rounded hover:bg-red-600 text-xs md:text-sm`} title="Delete"><FaTrash /></button>
-                      </>
-                    )}
-                  </td>
+
+                  {/* تعديل الأزرار */}
+            <td className={tw`border border-purple-200 p-1 md:p-2 flex justify-center items-center relative`}>
+  {editingEmail === user.email ? (
+    // زر الحفظ عند التحرير
+    <button 
+      onClick={handleSave} 
+      className={tw`bg-green-600 text-white p-1 md:p-2 rounded`} 
+      title="Save"
+    >
+      Save
+    </button>
+  ) : isMobile ? (
+    <div className={tw`relative`}>
+      {/* أيقونة النقاط الثلاث */}
+      <button 
+        onClick={() => setActiveMenu(activeMenu === user.id ? null : user.id)}
+        className={tw`mobile-ellipsis-button`}
+      >
+        <FaEllipsisV />
+      </button>
+
+      {/* القائمة المنبثقة تظهر كلا الزرين */}
+      {activeMenu === user.id && (
+        <div className={tw`mobile-ellipsis-menu`}>
+          <button 
+            onClick={() => { handleEdit(user); setActiveMenu(null); }}
+            className={tw`flex items-center gap-2`}
+          >
+            <FaEdit /> Edit
+          </button>
+          <button 
+            onClick={() => { handleDelete(user.email); setActiveMenu(null); }}
+            className={tw`flex items-center gap-2`}
+          >
+            <FaTrash /> Delete
+          </button>
+        </div>
+      )}
+    </div>
+  ) : (
+    <>
+      {/* أزرار التعديل والحذف على الأجهزة الأكبر */}
+      <button 
+        onClick={() => handleEdit(user)} 
+        className={tw`bg-yellow-500 text-white p-1 md:p-2 rounded hover:bg-yellow-600`} 
+        title="Edit"
+      >
+        <FaEdit />
+      </button>
+      <button 
+        onClick={() => handleDelete(user.email)} 
+        className={tw`bg-red-500 text-white p-1 md:p-2 rounded hover:bg-red-600`} 
+        title="Delete"
+      >
+        <FaTrash />
+      </button>
+    </>
+  )}
+</td>
+
+
+
                 </tr>
               )) : (
                 <tr>
