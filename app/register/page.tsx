@@ -5,24 +5,82 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { z } from "zod";
 import axios from "axios";
-import { tw } from "../twind"; // استدعاء Twind
+import { tw } from "../twind";
 
-// Zod Schema مع تحقق الإيميل
+// --------------------
+// Zod Schema
+// --------------------
 const formSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z
+  name: z
     .string()
+    .min(1, "Name is required")
     .refine(
-      (val) => val.includes("@") && val.endsWith("@gmail.com"),
-      "Email must contain '@' and end with '@gmail.com'"
+      (val) => /^[A-Za-z]+$/.test(val),
+      "Name must contain only letters and no spaces"
     ),
+
+  email: z.string().refine(
+    (val) => {
+      if (!val.includes("@")) return false;
+
+      const [localPart, domain] = val.split("@");
+      if (!localPart || !domain) return false;
+
+      if (localPart.length < 6) return false;
+
+      const digits = localPart.match(/\d/g);
+      if (!digits || digits.length < 2) return false;
+
+      if (!/[a-zA-Z]/.test(localPart)) return false;
+      if (!/^[a-zA-Z0-9._+-]+$/.test(localPart)) return false;
+      if (localPart.startsWith(".") || localPart.endsWith(".")) return false;
+      if (val.includes(" ")) return false;
+
+      if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(domain)) return false;
+
+      return true;
+    },
+    "Email must be valid and follow the required rules"
+  ),
+
   phone: z
     .string()
-    .regex(/^(056|059)\d{7}$/, "Phone must start with 056 or 059 and have 10 digits total"),
+    .regex(/^(056|059)\d{7}$/, "Phone must start with 056 or 059 and have 10 digits"),
+
   category: z.enum(["student", "teacher", "developer"]),
 });
 
 type FormData = z.infer<typeof formSchema>;
+
+// --------------------
+// Validate all fields (onSubmit)
+// --------------------
+const validateForm = (data: FormData) => {
+  const parsed = formSchema.safeParse(data);
+
+  if (parsed.success) {
+    return { success: true as const, data: parsed.data };
+  }
+
+  const errors: Partial<Record<keyof FormData, string>> = {};
+  parsed.error.issues.forEach((issue) => {
+    const key = issue.path[0] as keyof FormData;
+    errors[key] = issue.message;
+  });
+
+  return { success: false as const, errors };
+};
+
+// --------------------
+// Validate one field (onBlur)
+// --------------------
+const validateField = (name: keyof FormData, value: string) => {
+  const parsed = formSchema
+    .pick({ [name]: true })
+    .safeParse({ [name]: value });
+
+  return parsed.success ? "" : parsed.error.issues[0]?.message ?? "";
+};
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState<FormData>({
@@ -32,52 +90,64 @@ export default function RegisterPage() {
     category: "student",
   });
 
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({});
-  const [businessError, setBusinessError] = useState<string>("");
+  const [fieldErrors, setFieldErrors] =
+    useState<Partial<Record<keyof FormData, string>>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const [businessError, setBusinessError] = useState("");
+
+  // --------------------
+  // Change handler
+  // --------------------
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-
-    try {
-      formSchema.pick({ [name]: true }).parse({ [name]: value });
-      setFieldErrors((prev) => ({ ...prev, [name]: "" }));
-    } catch (err: any) {
-      if (err.issues)
-        setFieldErrors((prev) => ({ ...prev, [name]: err.issues[0].message }));
-    }
   };
 
+  // --------------------
+  // Blur handler (validate one field)
+  // --------------------
+  const handleBlur = (
+    e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    const error = validateField(name as keyof FormData, value);
+
+    setFieldErrors((prev) => ({ ...prev, [name]: error }));
+  };
+
+  // --------------------
+  // Submit handler (validate all)
+  // --------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusinessError("");
 
+    const result = validateForm(formData);
+
+    if (!result.success) {
+      setFieldErrors(result.errors);
+      return;
+    }
+
     try {
-      formSchema.parse(formData);
-
-      const res = await axios.post("/api/register", formData);
-
+      const res = await axios.post("/api/register", result.data);
       toast.success(res.data.message, { position: "top-center" });
 
-      setFormData({ name: "", email: "", phone: "", category: "student" });
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        category: "student",
+      });
       setFieldErrors({});
     } catch (err: any) {
       if (err.response?.status === 409) {
         setBusinessError("Data already exists");
         toast.error("Data already exists", { position: "top-center" });
-      } else if (err.response?.data?.error) {
-        setBusinessError(err.response.data.error);
-        toast.error(err.response.data.error, { position: "top-center" });
-      } else if (err instanceof z.ZodError) {
-        const newErrors: Partial<Record<keyof FormData, string>> = {};
-        err.issues.forEach((issue) => {
-          const key = issue.path[0] as keyof FormData;
-          newErrors[key] = issue.message;
-        });
-        setFieldErrors(newErrors);
       } else {
-        console.error("Unknown Error:", err);
-        toast.error(err.message || "Unexpected error occurred", { position: "top-center" });
+        toast.error("Unexpected error occurred", { position: "top-center" });
       }
     }
   };
@@ -86,64 +156,82 @@ export default function RegisterPage() {
     <div className={tw`max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-xl`}>
       <ToastContainer />
 
-      <h2 className={tw`text-2xl font-bold mb-3 text-center`}>Register User</h2>
+      <h2 className={tw`text-2xl font-bold mb-3 text-center`}>
+        Register User
+      </h2>
 
       {businessError && (
-        <div className={tw`bg-red-100 text-red-700 p-2 rounded mb-4 text-center font-medium`}>
+        <div className={tw`bg-red-100 text-red-700 p-2 rounded mb-4 text-center`}>
           {businessError}
         </div>
       )}
 
       <form className={tw`flex flex-col gap-4`} onSubmit={handleSubmit}>
+        {/* Name */}
         <div>
           <label className={tw`block mb-1 font-medium`}>Name</label>
           <input
-            id="name"
             name="name"
             value={formData.name}
             onChange={handleChange}
-            className={tw`border p-2 rounded w-full ${fieldErrors.name ? "border-red-500" : "border-gray-300"}`}
+            onBlur={handleBlur}
+            className={tw`border p-2 rounded w-full ${
+              fieldErrors.name ? "border-red-500" : "border-gray-300"
+            }`}
           />
           {fieldErrors.name && (
-            <p className={tw`text-red-500 text-sm mt-1`}>{fieldErrors.name}</p>
+            <p className={tw`text-red-500 text-sm mt-1`}>
+              {fieldErrors.name}
+            </p>
           )}
         </div>
 
+        {/* Email */}
         <div>
           <label className={tw`block mb-1 font-medium`}>Email</label>
           <input
-            id="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
-            className={tw`border p-2 rounded w-full ${fieldErrors.email ? "border-red-500" : "border-gray-300"}`}
+            onBlur={handleBlur}
+            className={tw`border p-2 rounded w-full ${
+              fieldErrors.email ? "border-red-500" : "border-gray-300"
+            }`}
           />
           {fieldErrors.email && (
-            <p className={tw`text-red-500 text-sm mt-1`}>{fieldErrors.email}</p>
+            <p className={tw`text-red-500 text-sm mt-1`}>
+              {fieldErrors.email}
+            </p>
           )}
         </div>
 
+        {/* Phone */}
         <div>
           <label className={tw`block mb-1 font-medium`}>Phone</label>
           <input
-            id="phone"
             name="phone"
             value={formData.phone}
             onChange={handleChange}
-            className={tw`border p-2 rounded w-full ${fieldErrors.phone ? "border-red-500" : "border-gray-300"}`}
+            onBlur={handleBlur}
+            className={tw`border p-2 rounded w-full ${
+              fieldErrors.phone ? "border-red-500" : "border-gray-300"
+            }`}
           />
           {fieldErrors.phone && (
-            <p className={tw`text-red-500 text-sm mt-1`}>{fieldErrors.phone}</p>
+            <p className={tw`text-red-500 text-sm mt-1`}>
+              {fieldErrors.phone}
+            </p>
           )}
         </div>
 
+        {/* Category */}
         <div>
           <label className={tw`block mb-1 font-medium`}>Category</label>
           <select
-            id="category"
             name="category"
             value={formData.category}
             onChange={handleChange}
+            onBlur={handleBlur}
             className={tw`border p-2 rounded w-full`}
           >
             <option value="student">Student</option>
@@ -151,13 +239,15 @@ export default function RegisterPage() {
             <option value="developer">Developer</option>
           </select>
           {fieldErrors.category && (
-            <p className={tw`text-red-500 text-sm mt-1`}>{fieldErrors.category}</p>
+            <p className={tw`text-red-500 text-sm mt-1`}>
+              {fieldErrors.category}
+            </p>
           )}
         </div>
 
         <button
           type="submit"
-          className={tw`bg-primary text-white p-2 rounded mt-3 hover:bg-blue-700 transition-colors`}
+          className={tw`bg-primary text-white p-2 rounded mt-3`}
         >
           Register
         </button>

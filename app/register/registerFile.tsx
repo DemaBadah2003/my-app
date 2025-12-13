@@ -1,5 +1,7 @@
 "use client";
 
+import axios from "axios";
+
 export interface User {
   name: string;
   email: string;
@@ -7,75 +9,71 @@ export interface User {
   category: string;
 }
 
-const STORAGE_KEY = "users";
-
-// قراءة المستخدمين
-export const getUsers = (): User[] => {
-  if (typeof window === "undefined") return [];
+// -------------------- التحقق من التكرار --------------------
+export const isDuplicateUser = async (user: User): Promise<boolean> => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
+    const res = await axios.get("/api/users");
+    const users: User[] = res.data.users || [];
+
+    const email = user.email.trim().toLowerCase();
+    const phone = user.phone.trim().toLowerCase();
+
+    return users.some(u =>
+      u.email.trim().toLowerCase() === email ||
+      u.phone.trim().toLowerCase() === phone
+    );
+  } catch (err) {
+    console.error("Failed to check duplicates:", err);
+    return false;
   }
 };
 
-// التحقق من التكرار
-export const isDuplicateUser = (user: User): boolean => {
-  const users = getUsers();
-  return users.some(
-    u =>
-      u.email.trim().toLowerCase() === user.email.trim().toLowerCase() &&
-      u.name.trim().toLowerCase() === user.name.trim().toLowerCase()
-  );
-};
+// -------------------- إضافة مستخدم --------------------
+export const addUser = async (user: User) => {
+  try {
+    const duplicate = await isDuplicateUser(user);
+    if (duplicate) return { success: false, message: "User already exists" };
 
-// إضافة مستخدم
-export const addUser = (user: User) => {
-  if (isDuplicateUser(user)) {
-    return { success: false, message: "User already exists" };
+    const res = await axios.post("/api/users", {
+      action: "add",
+      data: user
+    });
+
+    return res.data;
+  } catch (err: any) {
+    return { success: false, message: err.response?.data?.message || "Failed to add user" };
   }
-
-  const old = getUsers();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify([...old, user]));
-
-  return { success: true, message: "User added successfully" };
 };
 
-// تحديث مستخدم
-export const updateUser = (originalEmail: string, updatedUser: User) => {
-  const users = getUsers();
-
-  // التحقق من التكرار عند التعديل
-  const duplicate = users.some(
-    u =>
-      u.email !== originalEmail &&
-      u.email.trim().toLowerCase() === updatedUser.email.trim().toLowerCase() &&
-      u.name.trim().toLowerCase() === updatedUser.name.trim().toLowerCase()
-  );
-
-  if (duplicate) {
-    return { success: false, message: "User already exists" };
+// -------------------- تحديث مستخدم --------------------
+export const updateUser = async (originalEmail: string, updatedUser: User) => {
+  try {
+    const res = await axios.patch("/api/updataUsers", updatedUser); // حسب كودك السابق
+    return res.data;
+  } catch (err: any) {
+    return { success: false, message: err.response?.data?.message || "Failed to update user" };
   }
-
-  const index = users.findIndex(u => u.email === originalEmail);
-  if (index === -1) return { success: false, message: "User not found" };
-
-  users[index] = updatedUser;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(users));
-  return { success: true, message: "User updated successfully" };
 };
 
-// حذف مستخدم
-export const deleteUser = (email: string) => {
-  const users = getUsers();
-  const filtered = users.filter(u => u.email !== email);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(filtered));
-  return { success: true, message: "User deleted successfully" };
+// -------------------- حذف مستخدم --------------------
+export const deleteUser = async (email: string) => {
+  try {
+    const res = await axios.post("/api/users", {
+      action: "delete",
+      data: { email }
+    });
+    return res.data;
+  } catch (err: any) {
+    return { success: false, message: err.response?.data?.message || "Failed to delete user" };
+  }
 };
 
-// حذف الكل
-export const deleteAllUsers = () => {
-  localStorage.removeItem(STORAGE_KEY);
-  return { success: true, message: "All users deleted successfully" };
+// -------------------- حذف جميع المستخدمين --------------------
+export const deleteAllUsers = async () => {
+  try {
+    const res = await axios.post("/api/users", { action: "deleteAll" });
+    return res.data;
+  } catch (err: any) {
+    return { success: false, message: err.response?.data?.message || "Failed to delete all users" };
+  }
 };
