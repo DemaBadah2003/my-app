@@ -11,45 +11,47 @@ import { tw } from "../twind";
 // Zod Schema
 // --------------------
 const formSchema = z.object({
-  name: z
-    .string()
+  name: z.string()
     .min(1, "Name is required")
-    .refine(
-      (val) => /^[A-Za-z]+$/.test(val),
-      "Name must contain only letters and no spaces"
-    ),
+    .refine((name) => {
+      // يمنع المسافات في البداية أو النهاية
+      if (name !== name.trim()) return false;
 
-  email: z.string().refine(
-    (val) => {
-      if (!val.includes("@")) return false;
+      // يسمح بحروف فقط مع مسافة واحدة بين الاسم الاول والثاني
+      const validNameRegex = /^[A-Za-z]+( [A-Za-z]+)?$/;
 
-      const [localPart, domain] = val.split("@");
-      if (!localPart || !domain) return false;
+      return validNameRegex.test(name);
+    }, {
+      message: "Name must contain only letters and at most one space between first and last name, no leading or trailing spaces",
+    }),
 
-      if (localPart.length < 6) return false;
+  email: z.string()
+    .min(1, "Email is required")
+    .refine((email) => {
+      if (/\s/.test(email)) return false;
 
-      const digits = localPart.match(/\d/g);
-      if (!digits || digits.length < 2) return false;
+      const atCount = email.split("@").length - 1;
+      if (atCount !== 1) return false;
 
-      if (!/[a-zA-Z]/.test(localPart)) return false;
-      if (!/^[a-zA-Z0-9._+-]+$/.test(localPart)) return false;
-      if (localPart.startsWith(".") || localPart.endsWith(".")) return false;
-      if (val.includes(" ")) return false;
+      const [localPart, domain] = email.split("@");
+      if (!localPart) return false;
+      if (!domain || !domain.includes(".")) return false;
 
-      if (!/^[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(domain)) return false;
+      const validEmailRegex =
+        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
-      return true;
-    },
-    "Email must be valid and follow the required rules"
-  ),
+      return validEmailRegex.test(email);
+    }, { message: "Invalid email format" }),
 
-  phone: z
-    .string()
+  phone: z.string()
     .regex(/^(056|059)\d{7}$/, "Phone must start with 056 or 059 and have 10 digits"),
 
   category: z.enum(["student", "teacher", "developer"]),
 });
 
+// --------------------
+// Type inference
+// --------------------
 type FormData = z.infer<typeof formSchema>;
 
 // --------------------
@@ -63,7 +65,8 @@ const validateForm = (data: FormData) => {
   }
 
   const errors: Partial<Record<keyof FormData, string>> = {};
-  parsed.error.issues.forEach((issue) => {
+
+  parsed.error.issues.forEach((issue: z.ZodIssue) => {
     const key = issue.path[0] as keyof FormData;
     errors[key] = issue.message;
   });
@@ -82,6 +85,9 @@ const validateField = (name: keyof FormData, value: string) => {
   return parsed.success ? "" : parsed.error.issues[0]?.message ?? "";
 };
 
+// --------------------
+// React Component
+// --------------------
 export default function RegisterPage() {
   const [formData, setFormData] = useState<FormData>({
     name: "",
@@ -152,6 +158,9 @@ export default function RegisterPage() {
     }
   };
 
+  // --------------------
+  // JSX
+  // --------------------
   return (
     <div className={tw`max-w-md mx-auto mt-10 p-6 bg-white shadow-md rounded-xl`}>
       <ToastContainer />
@@ -175,9 +184,7 @@ export default function RegisterPage() {
             value={formData.name}
             onChange={handleChange}
             onBlur={handleBlur}
-            className={tw`border p-2 rounded w-full ${
-              fieldErrors.name ? "border-red-500" : "border-gray-300"
-            }`}
+            className={tw`border p-2 rounded w-full ${fieldErrors.name ? "border-red-500" : "border-gray-300"}`}
           />
           {fieldErrors.name && (
             <p className={tw`text-red-500 text-sm mt-1`}>
@@ -194,9 +201,7 @@ export default function RegisterPage() {
             value={formData.email}
             onChange={handleChange}
             onBlur={handleBlur}
-            className={tw`border p-2 rounded w-full ${
-              fieldErrors.email ? "border-red-500" : "border-gray-300"
-            }`}
+            className={tw`border p-2 rounded w-full ${fieldErrors.email ? "border-red-500" : "border-gray-300"}`}
           />
           {fieldErrors.email && (
             <p className={tw`text-red-500 text-sm mt-1`}>
@@ -213,9 +218,7 @@ export default function RegisterPage() {
             value={formData.phone}
             onChange={handleChange}
             onBlur={handleBlur}
-            className={tw`border p-2 rounded w-full ${
-              fieldErrors.phone ? "border-red-500" : "border-gray-300"
-            }`}
+            className={tw`border p-2 rounded w-full ${fieldErrors.phone ? "border-red-500" : "border-gray-300"}`}
           />
           {fieldErrors.phone && (
             <p className={tw`text-red-500 text-sm mt-1`}>
