@@ -11,21 +11,23 @@ import { tw } from "../twind";
 // Zod Schema
 // --------------------
 const formSchema = z.object({
-  name: z.string()
+  name: z
+    .string()
     .min(1, "Name is required")
     .refine((name) => {
-      // يمنع المسافات في البداية أو النهاية
+      // يمنع المسافة في البداية أو النهاية
       if (name !== name.trim()) return false;
 
-      // يسمح بحروف فقط مع مسافة واحدة بين الاسم الاول والثاني
-      const validNameRegex = /^[A-Za-z]+( [A-Za-z]+)?$/;
+      // يمنع أن يكون كله مسافات
+      if (name.trim().length === 0) return false;
 
-      return validNameRegex.test(name);
+      return true; // باقي الأشياء مسموحة
     }, {
-      message: "Name must contain only letters and at most one space between first and last name, no leading or trailing spaces",
+      message: "Name must not start or end with spaces",
     }),
 
-  email: z.string()
+  email: z
+    .string()
     .min(1, "Email is required")
     .refine((email) => {
       if (/\s/.test(email)) return false;
@@ -43,7 +45,8 @@ const formSchema = z.object({
       return validEmailRegex.test(email);
     }, { message: "Invalid email format" }),
 
-  phone: z.string()
+  phone: z
+    .string()
     .regex(/^(056|059)\d{7}$/, "Phone must start with 056 or 059 and have 10 digits"),
 
   category: z.enum(["student", "teacher", "developer"]),
@@ -112,7 +115,7 @@ export default function RegisterPage() {
   };
 
   // --------------------
-  // Blur handler (validate one field)
+  // Blur handler
   // --------------------
   const handleBlur = (
     e: React.FocusEvent<HTMLInputElement | HTMLSelectElement>
@@ -124,7 +127,7 @@ export default function RegisterPage() {
   };
 
   // --------------------
-  // Submit handler (validate all)
+  // Submit handler
   // --------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -184,7 +187,9 @@ export default function RegisterPage() {
             value={formData.name}
             onChange={handleChange}
             onBlur={handleBlur}
-            className={tw`border p-2 rounded w-full ${fieldErrors.name ? "border-red-500" : "border-gray-300"}`}
+            className={tw`border p-2 rounded w-full ${
+              fieldErrors.name ? "border-red-500" : "border-gray-300"
+            }`}
           />
           {fieldErrors.name && (
             <p className={tw`text-red-500 text-sm mt-1`}>
@@ -201,7 +206,9 @@ export default function RegisterPage() {
             value={formData.email}
             onChange={handleChange}
             onBlur={handleBlur}
-            className={tw`border p-2 rounded w-full ${fieldErrors.email ? "border-red-500" : "border-gray-300"}`}
+            className={tw`border p-2 rounded w-full ${
+              fieldErrors.email ? "border-red-500" : "border-gray-300"
+            }`}
           />
           {fieldErrors.email && (
             <p className={tw`text-red-500 text-sm mt-1`}>
@@ -218,7 +225,9 @@ export default function RegisterPage() {
             value={formData.phone}
             onChange={handleChange}
             onBlur={handleBlur}
-            className={tw`border p-2 rounded w-full ${fieldErrors.phone ? "border-red-500" : "border-gray-300"}`}
+            className={tw`border p-2 rounded w-full ${
+              fieldErrors.phone ? "border-red-500" : "border-gray-300"
+            }`}
           />
           {fieldErrors.phone && (
             <p className={tw`text-red-500 text-sm mt-1`}>
