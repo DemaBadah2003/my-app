@@ -1,53 +1,43 @@
-// تعريف مولد Prisma Client الذي يسمح لنا باستخدام Prisma للتفاعل مع قاعدة البيانات
 generator client {
   provider = "prisma-client-js"
 }
 
-// تعريف مصدر البيانات (قاعدة البيانات) ونوعها (PostgreSQL) ورابط الاتصال المخزن في متغير البيئة
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
+  // ملاحظة: لا تستخدم url هنا بعد Prisma 7
 }
 
-// نموذج Author يمثل المؤلفين في قاعدة البيانات
 model Author {
-  AuthorID Int     @id @default(autoincrement()) // معرف فريد لكل مؤلف ويتم توليده تلقائياً
-  Name     String                                   // اسم المؤلف
-  Country  String?                                  // الدولة (اختياري)
-
-  Books    Book[]                                   // علاقة واحد-إلى-كثير مع جدول الكتب
+  AuthorID Int @id @default(autoincrement())
+  Name     String
+  Country  String?
+  Books    Book[]
 }
 
-// نموذج Member يمثل الأعضاء الذين يمكنهم استعارة الكتب
 model Member {
-  MemberID Int      @id @default(autoincrement()) // معرف فريد لكل عضو ويتم توليده تلقائياً
-  FullName String                                  // الاسم الكامل للعضو
-  Email    String?  @unique                        // البريد الإلكتروني (اختياري ويجب أن يكون فريد)
-  JoinDate DateTime @default(now())               // تاريخ الانضمام للعضو (تاريخ افتراضي هو وقت الإدخال)
-
-  Borrowings Borrowing[]                           // علاقة واحد-إلى-كثير مع جدول الاستعارات
+  MemberID  Int @id @default(autoincrement())
+  FullName  String
+  Email     String? @unique
+  JoinDate  DateTime @default(now())
+  Borrowings Borrowing[]
 }
 
-// نموذج Book يمثل الكتب في المكتبة
 model Book {
-  BookID       Int     @id @default(autoincrement()) // معرف فريد للكتاب ويتم توليده تلقائياً
-  Title        String                                   // عنوان الكتاب
-  AuthorID     Int                                      // معرف المؤلف المرتبط بالكتاب
-  PublishedYear Int?                                    // سنة النشر (اختياري)
-  Genre        String?                                  // نوع الكتاب أو الفئة (اختياري)
-
-  Author      Author   @relation(fields: [AuthorID], references: [AuthorID]) // العلاقة مع المؤلف
-  Borrowings  Borrowing[]                                                     // علاقة واحد-إلى-كثير مع جدول الاستعارات
+  BookID       Int @id @default(autoincrement())
+  Title        String
+  AuthorID     Int
+  PublishedYear Int?
+  Genre        String?
+  Author      Author @relation(fields: [AuthorID], references: [AuthorID])
+  Borrowings  Borrowing[]
 }
 
-// نموذج Borrowing يمثل عملية استعارة كتاب بواسطة عضو
 model Borrowing {
-  BorrowID   Int      @id @default(autoincrement()) // معرف فريد للاستعارة ويتم توليده تلقائياً
-  BookID     Int                                     // معرف الكتاب المستعار
-  MemberID   Int                                     // معرف العضو الذي استعار الكتاب
-  BorrowDate DateTime                                // تاريخ الاستعارة
-  ReturnDate DateTime?                               // تاريخ الإرجاع (اختياري إذا لم يرجع بعد)
-
-  Book      Book     @relation(fields: [BookID], references: [BookID])      // العلاقة مع الكتاب
-  Member    Member   @relation(fields: [MemberID], references: [MemberID])  // العلاقة مع العضو
+  BorrowID   Int @id @default(autoincrement())
+  BookID     Int
+  MemberID   Int
+  BorrowDate DateTime
+  ReturnDate DateTime?
+  Book      Book   @relation(fields: [BookID], references: [BookID])
+  Member    Member @relation(fields: [MemberID], references: [MemberID])
 }

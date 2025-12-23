@@ -2,7 +2,6 @@ import fs from "fs";
 import { NextResponse } from "next/server";
 import { User } from "../updataUsers/route";
 import { ensureFileExists, checkDuplicates, userSchema, filePath, addUser } from "@/app/helpers/fileHelper"; // استدعاء الملف المشترك
-import * as yup from "yup";
 
 export async function GET() {
   try {
