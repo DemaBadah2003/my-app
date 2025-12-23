@@ -26,25 +26,7 @@ const formSchema = z.object({
       message: "Name must not start or end with spaces",
     }),
 
-  email: z
-    .string()
-    .min(1, "Email is required")
-    .refine((email) => {
-      if (/\s/.test(email)) return false;
-
-      const atCount = email.split("@").length - 1;
-      if (atCount !== 1) return false;
-
-      const [localPart, domain] = email.split("@");
-      if (!localPart) return false;
-      if (!domain || !domain.includes(".")) return false;
-
-      const validEmailRegex =
-        /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
-
-      return validEmailRegex.test(email);
-    }, { message: "Invalid email format" }),
-
+  email: z.string().email("Invalid email format"),
   phone: z
     .string()
     .regex(/^(056|059)\d{7}$/, "Phone must start with 056 or 059 and have 10 digits"),
