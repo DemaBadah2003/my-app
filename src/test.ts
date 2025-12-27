@@ -1,41 +1,42 @@
 import prisma from "./lib/prisma";
+console.log("🔥 TEST FILE RUNNING");
 
 async function main() {
   // إنشاء مؤلف جديد
-  const author = await prisma.authors.create({
+  const author = await prisma.author.create({
     data: {
-      name: "J.K. Rowling",
-      country: "UK",
+      Name: "J.K. Rowling",
+      Country: "UK",
     },
   });
   console.log("Author Created:", author);
 
   // إنشاء كتاب مرتبط بالمؤلف
-  const book = await prisma.books.create({
+  const book = await prisma.book.create({
     data: {
-      title: "Harry Potter and the Philosopher's Stone",
-      authorid: author.authorid,
-      publishedyear: 1997,
-      genre: "Fantasy",
+      Title: "Harry Potter and the Philosopher's Stone",
+     AuthorID: author.AuthorID,
+    PublishedYear: 1997,
+      Genre: "Fantasy",
     },
   });
   console.log("Book Created:", book);
 
   // إنشاء عضو جديد
-  const member = await prisma.members.create({
+  const member = await prisma.member.create({
     data: {
-      fullname: "John Doe",
-      email: "john@example.com",
+      FullName: "John Doe",
+      Email: "john@example.com",
     },
   });
   console.log("Member Created:", member);
 
   // إنشاء عملية استعارة
-  const borrow = await prisma.borrowings.create({
+  const borrow = await prisma.borrowing.create({
     data: {
-      bookid: book.bookid,
-      memberid: member.memberid,
-      borrowdate: new Date(),
+      BookID: book.BookID,
+     MemberID: member.MemberID,
+      BorrowDate: new Date(),
     },
   });
   console.log("Borrowing Created:", borrow);

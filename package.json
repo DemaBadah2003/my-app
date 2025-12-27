@@ -3,12 +3,13 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "prisma:test": "ts-node src/test.ts"
-  },
+  "dev": "node start-dev.js",
+  "build": "next build",
+  "start": "next start",
+  "lint": "eslint",
+  "prisma:test": "ts-node src/test.ts"
+}
+,
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
     "pg": "8.16.3",
