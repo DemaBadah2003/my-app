@@ -3,13 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-  "dev": "node start-dev.js",
-  "build": "next build",
-  "start": "next start",
-  "lint": "eslint",
-  "prisma:test": "ts-node src/test.ts"
-}
-,
+    "dev": "node start-dev.js",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "prisma:test": "ts-node src/test.ts",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:generate": "prisma generate",
+    "prisma:studio": "prisma studio",
+    "prisma:push": "prisma db push"
+  },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
     "pg": "8.16.3",

@@ -3,7 +3,7 @@ import { addUser, readUsers, deleteUser, deleteAllUsers } from "@/app/helpers/us
 
 export async function GET() {
   try {
-    const users = readUsers();
+    const users = await readUsers(); // ✅ الحل هنا
     return NextResponse.json({ users }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });

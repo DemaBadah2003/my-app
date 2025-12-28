@@ -9,10 +9,10 @@ export async function registerUser(data: any) {
 
   try {
     // 2️⃣ إضافة المستخدم في قاعدة البيانات
-    const newMember = await prisma.member.create({
+    const newMember = await prisma.members.create({
       data: {
-        FullName: validatedData.name,
-        Email: validatedData.email,
+      fullname: validatedData.name,
+        email: validatedData.email,
       },
     });
 

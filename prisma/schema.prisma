@@ -4,40 +4,46 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  // ملاحظة: لا تستخدم url هنا بعد Prisma 7
+}
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
 }
 
-model Author {
-  AuthorID Int @id @default(autoincrement())
-  Name     String
-  Country  String?
-  Books    Book[]
+model authors {
+  authorid Int     @id @default(autoincrement())
+  name     String  @db.VarChar(100)
+  country  String? @db.VarChar(100)
+  books    books[]
 }
 
-model Member {
-  MemberID  Int @id @default(autoincrement())
-  FullName  String
-  Email     String? @unique
-  JoinDate  DateTime @default(now())
-  Borrowings Borrowing[]
+model books {
+  bookid        Int          @id @default(autoincrement())
+  title         String       @db.VarChar(200)
+  authorid      Int
+  publishedyear Int?
+  genre         String?      @db.VarChar(50)
+  authors       authors      @relation(fields: [authorid], references: [authorid], onDelete: NoAction, onUpdate: NoAction, map: "fk_author")
+  borrowings    borrowings[]
 }
 
-model Book {
-  BookID       Int @id @default(autoincrement())
-  Title        String
-  AuthorID     Int
-  PublishedYear Int?
-  Genre        String?
-  Author      Author @relation(fields: [AuthorID], references: [AuthorID])
-  Borrowings  Borrowing[]
+model borrowings {
+  borrowid   Int       @id @default(autoincrement())
+  bookid     Int
+  memberid   Int
+  borrowdate DateTime  @db.Date
+  returndate DateTime? @db.Date
+  books      books     @relation(fields: [bookid], references: [bookid], onDelete: NoAction, onUpdate: NoAction, map: "fk_book")
+  members    members   @relation(fields: [memberid], references: [memberid], onDelete: NoAction, onUpdate: NoAction, map: "fk_member")
 }
 
-model Borrowing {
-  BorrowID   Int @id @default(autoincrement())
-  BookID     Int
-  MemberID   Int
-  BorrowDate DateTime
-  ReturnDate DateTime?
-  Book      Book   @relation(fields: [BookID], references: [BookID])
-  Member    Member @relation(fields: [MemberID], references: [MemberID])
+model members {
+  memberid   Int          @id @default(autoincrement())
+  fullname   String       @db.VarChar(150)
+  email      String?      @unique @db.VarChar(150)
+  joindate   DateTime?    @default(dbgenerated("CURRENT_DATE")) @db.Date
+  borrowings borrowings[]
 }

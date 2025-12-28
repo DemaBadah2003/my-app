@@ -5,7 +5,7 @@ const prisma = new PrismaClient();
 
 // 1️⃣ قراءة جميع المستخدمين
 export async function readUsers() {
-  return prisma.member.findMany();
+  return prisma.members.findMany();
 }
 
 // 2️⃣ إضافة مستخدم
@@ -13,10 +13,10 @@ export async function addUser(data: any) {
   const validatedData = await userSchema.validate(data, { abortEarly: false });
 
   try {
-    const newUser = await prisma.member.create({
+    const newUser = await prisma.members.create({
       data: {
-        FullName: validatedData.name,
-        Email: validatedData.email,
+        fullname: validatedData.name,
+        email: validatedData.email,
       },
     });
 
@@ -39,12 +39,12 @@ export async function addUser(data: any) {
 
 // 3️⃣ حذف مستخدم
 export async function deleteUser(email: string) {
-  await prisma.member.deleteMany({ where: { Email: email } });
+  await prisma.members.deleteMany({ where: { email: email } });
   return { success: true, message: "User deleted successfully" };
 }
 
 // 4️⃣ حذف جميع المستخدمين
 export async function deleteAllUsers() {
-  await prisma.member.deleteMany({});
+  await prisma.members.deleteMany({});
   return { success: true, message: "All users deleted successfully" };
 }
