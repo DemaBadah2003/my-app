@@ -4,26 +4,15 @@ import { registerUser } from "@/app/helpers/registerService";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-
     const result = await registerUser(body);
 
-    return NextResponse.json(result.json, {
-      status: result.status,
-    });
+    return NextResponse.json(result.json, { status: result.status });
 
   } catch (err: any) {
-    // Validation Errors
     if (err.name === "ValidationError") {
-      return NextResponse.json(
-        { errors: err.errors },
-        { status: 422 }
-      );
+      return NextResponse.json({ errors: err.errors }, { status: 422 });
     }
 
-    // General Errors
-    return NextResponse.json(
-      { error: err.message || "Bad Request" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: err.message || "Bad Request" }, { status: 400 });
   }
 }

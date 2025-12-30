@@ -1,29 +1,34 @@
-import { PrismaClient } from "@prisma/client";
-import { registerSchema } from "./schema";
-
-const prisma = new PrismaClient();
+import prisma from "@/src/lib/prisma";
+import { registerSchema } from "@/app/helpers/schema";
 
 export async function registerUser(data: any) {
-  // 1️⃣ التحقق من صحة البيانات
-  const validatedData = await registerSchema.validate(data, { abortEarly: false });
+  // التحقق من صحة البيانات
+  const validatedData = await registerSchema.validate(data, {
+    abortEarly: false,
+  });
 
   try {
-    // 2️⃣ إضافة المستخدم في قاعدة البيانات
-    const newMember = await prisma.members.create({
-      data: {
-      fullname: validatedData.name,
-        email: validatedData.email,
-      },
-    });
+    // إنشاء مستخدم جديد في جدول User
+ const newUser = await prisma.user.create({
+  data: {
+    name: validatedData.name,
+    email: validatedData.email,
+    phone: validatedData.phone,
+    category: validatedData.category || "Student",
+  },
+});
+
+
 
     return {
       status: 201,
-      json: { message: "Registered successfully", data: newMember },
+      json: {
+        message: "Registered successfully",
+        data: newUser,
+      },
     };
-
   } catch (err: any) {
-    // 3️⃣ التعامل مع التكرار
-    if (err.code === "P2002") { // unique constraint violation
+    if (err.code === "P2002") {
       return {
         status: 409,
         json: { error: "Email already registered" },

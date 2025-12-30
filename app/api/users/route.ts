@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { addUser, readUsers, deleteUser, deleteAllUsers } from "@/app/helpers/userService";
+import { readUsers, deleteUser, deleteAllUsers } from "@/app/helpers/usersService";
 
 export async function GET() {
   try {
-    const users = await readUsers(); // ✅ الحل هنا
+    const users = await readUsers();
     return NextResponse.json({ users }, { status: 200 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
@@ -12,27 +12,25 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const body: { action: "add" | "delete" | "deleteAll"; data: any } = await req.json();
-    const { action, data } = body;
+    const body = await req.json();
 
-    if (action === "add") {
-      const result = await addUser(data);
-      return NextResponse.json(result.json, { status: result.status });
+    if (body.action === "delete") {
+  return NextResponse.json(await deleteUser(body.data.email));
     }
 
-    if (action === "delete") {
-      const result = deleteUser(data.email);
-      return NextResponse.json(result);
+    if (body.action === "deleteAll") {
+      return NextResponse.json(await deleteAllUsers());
     }
 
-    if (action === "deleteAll") {
-      const result = deleteAllUsers();
-      return NextResponse.json(result);
-    }
-
-    return NextResponse.json({ success: false, message: "Unknown action" }, { status: 400 });
+    return NextResponse.json(
+      { success: false, message: "Adding users is only allowed via register" },
+      { status: 403 }
+    );
 
   } catch (err: any) {
-    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: err.message },
+      { status: 500 }
+    );
   }
 }
