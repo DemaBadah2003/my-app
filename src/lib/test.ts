@@ -1,4 +1,4 @@
-import prisma from "./lib/prisma";
+import prisma from "./prisma";
 console.log("🔥 TEST FILE RUNNING");
 
 async function main() {

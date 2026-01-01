@@ -2,10 +2,14 @@ import { NextResponse } from "next/server";
 import { readUsers, deleteUser, deleteAllUsers } from "@/app/helpers/usersService";
 
 export async function GET() {
+    console.log("GET /api/users");
+
   try {
     const users = await readUsers();
     return NextResponse.json({ users }, { status: 200 });
   } catch (err: any) {
+      console.error("Error fetching users:", err); // ← هذا سيظهر سبب الخطأ في التيرمينال
+
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
@@ -33,4 +37,5 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+
 }

@@ -134,13 +134,18 @@ export default function RegisterPage() {
       });
       setFieldErrors({});
     } catch (err: any) {
-      if (err.response?.status === 409) {
-        setBusinessError("Data already exists");
-        toast.error("Data already exists", { position: "top-center" });
-      } else {
-        toast.error("Unexpected error occurred", { position: "top-center" });
-      }
-    }
+  if (err.response) {
+    // السيرفر رد مع كود خطأ
+    toast.error(err.response.data.message || `Server error ${err.response.status}`, { position: "top-center" });
+  } else if (err.request) {
+    // لم يصل الرد من السيرفر
+    toast.error("Network error: Server did not respond", { position: "top-center" });
+  } else {
+    // خطأ داخلي في Axios
+    toast.error(`Request error: ${err.message}`, { position: "top-center" });
+  }
+}
+
   };
 
   // --------------------
