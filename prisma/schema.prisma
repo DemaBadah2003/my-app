@@ -13,6 +13,14 @@ model User {
   phone    String?   @db.VarChar(30)
   category String    @default("Student")
 }
+model Products {
+  id       Int     @id @default(autoincrement())
+  name     String  @db.VarChar(150)
+  category String  @db.VarChar(100)
+  owner    String  @db.VarChar(150)
+  count    Int
+}
+
 
 model authors {
   authorid Int     @id @default(autoincrement())

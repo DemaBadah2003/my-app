@@ -1,5 +1,13 @@
 
 import { PrismaClient } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
+
+const adapter = new PrismaPg(pool);
 
 declare global {
   var prisma: PrismaClient | undefined;
@@ -8,9 +16,8 @@ declare global {
 const prisma =
   global.prisma ||
   new PrismaClient({
-    accelerateUrl: process.env.DATABASE_URL,
-        log: ["query"], // optional: يظهر جميع الاستعلامات في التيرمينال
-
+    adapter,
+    log: ["query"], // optional: يظهر جميع الاستعلامات في التيرمينال
   });
 
 if (process.env.NODE_ENV !== "production") global.prisma = prisma;
