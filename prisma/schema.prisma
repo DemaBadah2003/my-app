@@ -7,52 +7,18 @@ datasource db {
 }
 
 model User {
-  userId   Int       @id @default(autoincrement())
-  name     String    @db.VarChar(150)
-  email    String?   @unique @db.VarChar(150)
-  phone    String?   @db.VarChar(30)
-  category String    @default("Student")
-}
-model Products {
-  id       Int     @id @default(autoincrement())
-  name     String  @db.VarChar(150)
-  category String  @db.VarChar(100)
-  owner    String  @db.VarChar(150)
-  count    Int
+  userId   Int    @id @default(autoincrement())
+  name     String @db.VarChar(150)
+  email    String @unique @db.VarChar(150)
+  phone    String @db.VarChar(30)
+  category String
 }
 
+model products {
 
-model authors {
-  authorid Int     @id @default(autoincrement())
-  name     String  @db.VarChar(100)
-  country  String? @db.VarChar(100)
-  books    books[]
-}
-
-model books {
-  bookid        Int          @id @default(autoincrement())
-  title         String       @db.VarChar(200)
-  authorid      Int
-  publishedyear Int?
-  genre         String?      @db.VarChar(50)
-  authors       authors      @relation(fields: [authorid], references: [authorid], onDelete: NoAction, onUpdate: NoAction, map: "fk_author")
-  borrowings    borrowings[]
-}
-
-model borrowings {
-  borrowid   Int       @id @default(autoincrement())
-  bookid     Int
-  memberid   Int
-  borrowdate DateTime  @db.Date
-  returndate DateTime? @db.Date
-  books      books     @relation(fields: [bookid], references: [bookid], onDelete: NoAction, onUpdate: NoAction, map: "fk_book")
-  members    members   @relation(fields: [memberid], references: [memberid], onDelete: NoAction, onUpdate: NoAction, map: "fk_member")
-}
-
-model members {
-  memberid   Int          @id @default(autoincrement())
-  fullname   String       @db.VarChar(150)
-  email      String?      @unique @db.VarChar(150)
-  joindate   DateTime?    @default(dbgenerated("CURRENT_DATE")) @db.Date
-  borrowings borrowings[]
+  productid Int    @id @default(autoincrement())
+  name      String @db.VarChar(150)
+  category  String @db.VarChar(100)
+  owner     String @db.VarChar(150)
+  count     Int
 }

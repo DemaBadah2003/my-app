@@ -8,7 +8,7 @@ import { tw } from "../twind";
 import { FaEdit, FaTrash, FaEllipsisV } from "react-icons/fa";
 
 export interface User {
-  id: number;
+  userId: number; // ✅ هذا مهم جداً
   name: string;
   email: string;
   phone: string;
@@ -219,7 +219,7 @@ export default function UsersPage() {
             </thead>
             <tbody className={tw`text-[10px] md:text-sm lg:text-base`}>
               {currentUsers.length > 0 ? currentUsers.map((user) => (
-                <tr key={user.id} className={tw`hover:bg-purple-100 transition bg-white`}>
+                <tr key={user.userId} className={tw`hover:bg-purple-100 transition bg-white`}>
                   <td className={tw`border border-purple-200 p-1 md:p-2 break-words text-[10px] md:text-sm`}>
                     {editingEmail === user.email ? (
                       <input name="name" value={editData?.name} onChange={handleChange} className={tw`border p-1 rounded w-full text-[10px] md:text-sm`} />
@@ -255,10 +255,10 @@ export default function UsersPage() {
                       </button>
                     ) : isMobile ? (
                       <div className={tw`relative`}>
-                        <button onClick={() => setActiveMenu(activeMenu === user.id ? null : user.id)} className={tw`p-1`}>
+                        <button onClick={() => setActiveMenu(activeMenu === user.userId ? null : user.userId)} className={tw`p-1`}>
                           <FaEllipsisV />
                         </button>
-                        {activeMenu === user.id && (
+                        {activeMenu === user.userId && (
                           <div className={tw`absolute right-0 top-full mt-1 bg-white shadow-lg border rounded flex flex-col w-28 z-50`}>
                             <button onClick={() => { handleEdit(user); setActiveMenu(null); }} className={tw`flex items-center gap-2 px-2 py-2 hover:bg-gray-100 w-full`}><FaEdit /> Edit</button>
                             <button onClick={() => { handleDelete(user.email); setActiveMenu(null); }} className={tw`flex items-center gap-2 px-2 py-2 hover:bg-gray-100 w-full`}><FaTrash /> Delete</button>

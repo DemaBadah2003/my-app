@@ -1,81 +1,100 @@
+// /api/updataUsers/route.ts
 import { NextResponse } from "next/server";
-import { ensureFileExists, userSchema } from "@/app/helpers/fileHelper"; // استدعاء userSchema
-import fs from "fs";
-import path from "path";
+import prisma from "@/src/lib/prisma"; // تأكد من مسار Prisma Client
+import * as yup from "yup";
 
-// مسار المجلد والملف
-const dirPath = path.join(process.cwd(), "app/api/data");
-const filePath = path.join(dirPath, "users.json");
+// -------------------- Yup schema للتحقق من الشروط --------------------
+const userSchema = yup.object().shape({
+  name: yup
+    .string()
+    .trim()
+    .min(2, "Name must be at least 2 characters")
+    .required("Name is required"),
+  email: yup
+    .string()
+    .trim()
+    .matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.com$/, "Email must be valid and end with .com")
+    .required("Email is required"),
+  phone: yup
+    .string()
+    .trim()
+    .matches(/^05(6|9)\d{7}$/, "Phone must start with 056 or 059 followed by 7 digits")
+    .required("Phone is required"),
+  category: yup
+    .string()
+    .oneOf(["student", "teacher", "developer"], "Category must be selected")
+    .required("Category is required")
+});
 
-// -------------------- Types --------------------
-export type User = {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  category: string;
-};
-
-// -------------------- Check duplicates --------------------
-function checkDuplicates(users: User[], email: string, phone: string, excludeId?: number): string | null {
-  const emailExists = users.some(u => u.email === email && u.id !== excludeId);
-  const phoneExists = users.some(u => u.phone === phone && u.id !== excludeId);
-
-  if (emailExists && phoneExists) return "Email and phone already exist";
-  if (emailExists) return "Email already exists";
-  if (phoneExists) return "Phone already exists";
-  return null;
-}
-
-// -------------------- PATCH for UPDATE --------------------
+// -------------------- PATCH --------------------
 export async function PATCH(req: Request) {
   try {
-    // استلام البيانات الأصلية فقط
-    const userPayload: User = await req.json(); // {id, name, email, phone, category}
+    const payload = await req.json();
+    const { userId, name, email, phone, category } = payload;
 
-    // تأكد أن الملف موجود
-    ensureFileExists();
-    const users: User[] = JSON.parse(fs.readFileSync(filePath, "utf-8"));
-    const index = users.findIndex(u => u.id === userPayload.id);
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, message: "Invalid user ID" },
+        { status: 400 }
+      );
+    }
 
-    if (index === -1) {
+    // تحقق من صحة البيانات قبل أي تحديث
+    try {
+      await userSchema.validate({ name, email, phone, category }, { abortEarly: false });
+    } catch (err: any) {
+      // جمع كل الأخطاء وعرضها
+      const errors = err.inner?.map((e: any) => e.message) || [err.message];
+      return NextResponse.json({ success: false, message: errors.join(", ") }, { status: 422 });
+    }
+
+    // تحقق أن المستخدم موجود
+    const existingUser = await prisma.user.findUnique({
+      where: { userId: Number(userId) }
+    });
+
+    if (!existingUser) {
       return NextResponse.json(
         { success: false, message: "User not found" },
         { status: 404 }
       );
     }
 
-    // تحقق من صحة البيانات باستخدام Yup schema
-    try {
-      await userSchema.validate(userPayload);
-    } catch (err: any) {
-      return NextResponse.json(
-        { success: false, message: err.errors },
-        { status: 422 }
-      );
-    }
+    // تحقق من تكرار البريد أو الهاتف باستثناء هذا المستخدم
+    const duplicateUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email },
+          { phone }
+        ],
+        NOT: { userId: Number(userId) }
+      }
+    });
 
-    // تحقق من التكرار مع استثناء المستخدم نفسه
-    const duplicateMessage = checkDuplicates(users, userPayload.email, userPayload.phone, userPayload.id);
-    if (duplicateMessage) {
-      return NextResponse.json(
-        { success: false, message: duplicateMessage },
-        { status: 409 }
-      );
+    if (duplicateUser) {
+      let msg = "";
+      if (duplicateUser.email === email && duplicateUser.phone === phone) msg = "Email and phone already exist";
+      else if (duplicateUser.email === email) msg = "Email already exists";
+      else msg = "Phone already exists";
+
+      return NextResponse.json({ success: false, message: msg }, { status: 409 });
     }
 
     // تحديث المستخدم
-    users[index] = userPayload;
-    fs.writeFileSync(filePath, JSON.stringify(users, null, 2));
+    const updatedUser = await prisma.user.update({
+      where: { userId: Number(userId) },
+      data: { name, email, phone, category }
+    });
 
-    return NextResponse.json(
-      { success: true, message: "User updated successfully", user: userPayload },
-      { status: 200 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: "User updated successfully",
+      user: updatedUser
+    }, { status: 200 });
 
   } catch (err: any) {
     return NextResponse.json(
-      { success: false, message: err.message },
+      { success: false, message: err.message || "Failed to update user" },
       { status: 500 }
     );
   }

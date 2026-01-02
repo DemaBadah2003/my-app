@@ -1,49 +1,59 @@
 import prisma from "@/src/lib/prisma";
-import * as yup from "yup";
 
-// التحقق من البيانات Schema
-export const productSchema = yup.object().shape({
-  name: yup.string().required("Name is required"),
-  category: yup.string().required("Category is required"),
-  owner: yup.string().required("Owner is required"),
-  count: yup.number().required("Count is required").positive().integer(),
-});
+// ==============================
+// قراءة جميع المنتجات
+// ==============================
+export async function readProducts() {
+  return prisma.products.findMany();
+}
 
-export async function createProduct(data: any) {
-  // التحقق من صحة البيانات
-  const validatedData = await productSchema.validate(data, {
-    abortEarly: false, // تظهر كل الأخطاء مرة واحدة
+// ==============================
+// إنشاء منتج جديد
+// ==============================
+export async function createProducts(
+  name: string,
+  category: string,
+  owner: string,
+  count: number
+) {
+  return prisma.products.create({
+    data: {
+      name,
+      category,
+      owner,
+      count,
+    },
   });
+}
 
+// ==============================
+// حذف منتج حسب ID
+// ==============================
+export async function deleteProducts(id: number) {
   try {
-    // إنشاء منتج جديد في قاعدة البيانات
-    const newProduct = await prisma.products.create({ // ✅ lowercase 'product'
-      data: {
-        name: validatedData.name,
-        category: validatedData.category,
-        owner: validatedData.owner,
-        count: validatedData.count,
-      },
+    await prisma.products.delete({
+      where: { id },
     });
 
     return {
-      status: 201,
-      json: {
-        message: "Product created successfully",
-        data: newProduct,
-      },
+      success: true,
+      message: "Products deleted successfully",
     };
-  } catch (err: any) {
-    if (err.code === "P2002") {
-      return {
-        status: 409,
-        json: { error: "Product already exists" },
-      };
-    }
-
+  } catch {
     return {
-      status: 500,
-      json: { error: err.message || "Server Error" },
+      success: false,
+      message: "No products found with this ID",
     };
   }
+}
+
+// ==============================
+// حذف جميع المنتجات
+// ==============================
+export async function deleteAllProducts() {
+  await prisma.products.deleteMany({});
+  return {
+    success: true,
+    message: "All products deleted successfully",
+  };
 }
