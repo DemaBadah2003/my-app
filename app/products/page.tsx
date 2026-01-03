@@ -25,6 +25,16 @@ export default function ProductsManagementPage() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
+  // ===== Create Product =====
+const [showCreateModal, setShowCreateModal] = useState(false);
+
+const [newProduct, setNewProduct] = useState({
+  name: "",
+  owner: "",
+  category: "clothes" as "clothes" | "food" | "health",
+  count: 0,
+});
+
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -119,6 +129,38 @@ export default function ProductsManagementPage() {
     console.error("Delete all error:", error);
   }
 };
+// ===== Create Product handlers =====
+const handleNewProductChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+) => {
+  const value =
+    e.target.name === "count" ? Number(e.target.value) : e.target.value;
+
+  setNewProduct({ ...newProduct, [e.target.name]: value });
+};
+
+const handleCreateProduct = async () => {
+  try {
+    const res = await axios.post("/api/products", {
+      action: "add",
+      data: newProduct,
+    });
+
+    if (!res.data.success) {
+      return toast.error(res.data.message, { position: "top-center" });
+    }
+
+    toast.success("Product created successfully", { position: "top-center" });
+    setShowCreateModal(false);
+    setNewProduct({ name: "", owner: "", category: "clothes", count: 0 });
+    fetchProducts();
+  } catch (err: any) {
+    toast.error(
+      err.response?.data?.message || "Failed to create product",
+      { position: "top-center" }
+    );
+  }
+};
 
 
   /* ================= SEARCH ================= */
@@ -146,6 +188,66 @@ export default function ProductsManagementPage() {
   return (
     <div className={tw`min-h-screen bg-purple-50`}>
       <ToastContainer />
+      {showCreateModal && (
+  <div className={tw`fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50`}>
+    <div className={tw`bg-white rounded-xl shadow-lg w-full max-w-md p-5`}>
+      <h3 className={tw`text-lg font-bold text-purple-800 mb-4`}>
+        Create New Product
+      </h3>
+
+      <input
+        name="name"
+        placeholder="Product Name"
+        value={newProduct.name}
+        onChange={handleNewProductChange}
+        className={tw`border p-2 rounded w-full mb-2`}
+      />
+
+      <input
+        name="owner"
+        placeholder="Owner"
+        value={newProduct.owner}
+        onChange={handleNewProductChange}
+        className={tw`border p-2 rounded w-full mb-2`}
+      />
+
+      <input
+        type="number"
+        name="count"
+        value={newProduct.count}
+        onChange={handleNewProductChange}
+        className={tw`border p-2 rounded w-full mb-2`}
+      />
+
+      <select
+        name="category"
+        value={newProduct.category}
+        onChange={handleNewProductChange}
+        className={tw`border p-2 rounded w-full mb-4`}
+      >
+        <option value="clothes">Clothes</option>
+        <option value="food">Food</option>
+        <option value="health">Health</option>
+      </select>
+
+      <div className={tw`flex justify-end gap-2`}>
+        <button
+          onClick={() => setShowCreateModal(false)}
+          className={tw`px-4 py-2 bg-gray-300 rounded`}
+        >
+          Cancel
+        </button>
+        <button
+          onClick={handleCreateProduct}
+          className={tw`px-4 py-2 bg-green-600 text-white rounded`}
+        >
+          Create
+        </button>
+      </div>
+    </div>
+  </div>
+)}
+
 
       {/* SIDEBAR */}
       <aside className={tw`
@@ -208,6 +310,8 @@ export default function ProductsManagementPage() {
               <option value="health">Health</option>
             </select>
             <button onClick={handleSearch} className={tw`bg-purple-700 text-white p-2 md:p-2 rounded hover:bg-purple-800 transition text-[10px] md:text-sm`}>Search</button>
+            <button onClick={() => setShowCreateModal(true)} className={tw`bg-green-600 text-white p-2 rounded hover:bg-green-700`}>+ Create Product</button>
+
             <button onClick={handleDeleteAll} className={tw`bg-red-600 text-white p-2 md:p-2 rounded hover:bg-red-700 transition text-[10px] md:text-sm`}>Delete All</button>
           </div>
         </div>
@@ -279,6 +383,7 @@ export default function ProductsManagementPage() {
               )}
             </tbody>
           </table>
+          
 
           {/* Pagination */}
           {totalPages > 1 && (
