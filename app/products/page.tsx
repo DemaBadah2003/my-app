@@ -25,6 +25,11 @@ export default function ProductsManagementPage() {
   const [showSidebar, setShowSidebar] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [activeMenu, setActiveMenu] = useState<number | null>(null);
+  type SidebarTab = "dashboard" | "products" | "categories" | "settings";
+
+const [activeTab, setActiveTab] = useState<SidebarTab>("products");
+
+
   // ===== Create Product =====
 const [showCreateModal, setShowCreateModal] = useState(false);
 
@@ -247,8 +252,6 @@ const handleCreateProduct = async () => {
     </div>
   </div>
 )}
-
-
       {/* SIDEBAR */}
       <aside className={tw`
         fixed top-0 left-0 h-full bg-gradient-to-b from-purple-900 to-purple-700 
@@ -259,12 +262,48 @@ const handleCreateProduct = async () => {
         <div className={tw`py-6 px-6 border-b border-purple-600`}>
           <h1 className={tw`text-2xl font-bold`}>Control Panel</h1>
         </div>
-        <nav className={tw`flex-1 px-4 py-6 space-y-3`}>
-          <button className={tw`flex items-center space-x-3 py-2 px-4 rounded hover:bg-purple-600 w-full text-left`}>🏠 Dashboard</button>
-          <button className={tw`flex items-center space-x-3 py-2 px-4 rounded hover:bg-purple-600 w-full text-left bg-purple-700`}>📦 Products Management</button>
-          <button className={tw`flex items-center space-x-3 py-2 px-4 rounded hover:bg-purple-600 w-full text-left`}>📂 Categories</button>
-          <button className={tw`flex items-center space-x-3 py-2 px-4 rounded hover:bg-purple-600 w-full text-left`}>⚙️ Settings</button>
-        </nav>
+      <nav className={tw`flex-1 px-4 py-6 space-y-2`}>
+  <button
+    onClick={() => setActiveTab("dashboard")}
+    className={tw`
+      flex items-center gap-3 py-2 px-4 rounded w-full text-left
+      ${activeTab === "dashboard" ? "bg-purple-700" : "hover:bg-purple-600"}
+    `}
+  >
+    🏠 Dashboard
+  </button>
+
+  <button
+    onClick={() => setActiveTab("products")}
+    className={tw`
+      flex items-center gap-3 py-2 px-4 rounded w-full text-left
+      ${activeTab === "products" ? "bg-purple-700" : "hover:bg-purple-600"}
+    `}
+  >
+    📦 Products Management
+  </button>
+
+  <button
+    onClick={() => setActiveTab("categories")}
+    className={tw`
+      flex items-center gap-3 py-2 px-4 rounded w-full text-left
+      ${activeTab === "categories" ? "bg-purple-700" : "hover:bg-purple-600"}
+    `}
+  >
+    📂 Categories
+  </button>
+
+  <button
+    onClick={() => setActiveTab("settings")}
+    className={tw`
+      flex items-center gap-3 py-2 px-4 rounded w-full text-left
+      ${activeTab === "settings" ? "bg-purple-700" : "hover:bg-purple-600"}
+    `}
+  >
+    ⚙️ Settings
+  </button>
+</nav>
+
         <div className={tw`px-4 py-4 border-t border-purple-600`}>
           <button className={tw`flex items-center space-x-3 bg-red-500 hover:bg-red-600 px-4 py-2 rounded w-full text-left`}>🚪 Logout</button>
         </div>
@@ -315,9 +354,13 @@ const handleCreateProduct = async () => {
             <button onClick={handleDeleteAll} className={tw`bg-red-600 text-white p-2 md:p-2 rounded hover:bg-red-700 transition text-[10px] md:text-sm`}>Delete All</button>
           </div>
         </div>
+       
+
 
         {/* Products Table */}
-        <div className={tw`w-full overflow`}>
+      {activeTab === "products" && (
+  <div className={tw`w-full overflow`}>
+
           <table className={tw`w-full table-auto border-collapse bg-white text-gray-900 rounded-xl shadow-lg border border-purple-300`} style={{ tableLayout: "auto", wordBreak: "break-word" }}>
             <thead className={tw`bg-purple-200 text-purple-900`}>
               <tr>
@@ -383,7 +426,33 @@ const handleCreateProduct = async () => {
               )}
             </tbody>
           </table>
-          
+          </div>
+)}
+{activeTab === "dashboard" && (
+  <div className={tw`bg-white p-6 rounded-xl shadow`}>
+    Dashboard content here
+  </div>
+)}
+
+{activeTab === "products" && (
+  <>
+    {/* جدول المنتجات عندك بدون أي تغيير */}
+  </>
+)}
+
+{activeTab === "categories" && (
+  <div className={tw`bg-white p-6 rounded-xl shadow`}>
+    Categories management here
+  </div>
+)}
+
+{activeTab === "settings" && (
+  <div className={tw`bg-white p-6 rounded-xl shadow`}>
+    Settings here
+  </div>
+)}
+
+
 
           {/* Pagination */}
           {totalPages > 1 && (
@@ -395,8 +464,8 @@ const handleCreateProduct = async () => {
               <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className={tw`px-3 py-1 rounded bg-purple-700 text-white disabled:bg-purple-300`}>Next</button>
             </div>
           )}
-        </div>
       </div>
     </div>
+    
   );
 }
