@@ -1,59 +1,37 @@
 import prisma from "@/src/lib/prisma";
 
-// ==============================
-// قراءة جميع المنتجات
-// ==============================
+// قراءة المنتجات
 export async function readProducts() {
   return prisma.products.findMany();
 }
 
-// ==============================
-// إنشاء منتج جديد
-// ==============================
-export async function createProducts(
+// إنشاء منتج
+export async function createProduct(
   name: string,
-  category: string,
   owner: string,
+  category: "clothes" | "food" | "health",
   count: number
 ) {
   return prisma.products.create({
-    data: {
-      name,
-      category,
-      owner,
-      count,
-    },
+    data: { name, owner, category, count },
   });
 }
 
-// ==============================
-// حذف منتج حسب ID
-// ==============================
-export async function deleteProducts(id: number) {
+// ✅ حذف منتج بالـ productid (الحل الصحيح)
+export async function deleteProduct(productid: number) {
   try {
     await prisma.products.delete({
-      where: { id },
+      where: { productid },
     });
 
-    return {
-      success: true,
-      message: "Products deleted successfully",
-    };
-  } catch {
-    return {
-      success: false,
-      message: "No products found with this ID",
-    };
+    return { success: true, message: "Product deleted successfully" };
+  } catch (error) {
+    return { success: false, message: "Product not found" };
   }
 }
 
-// ==============================
 // حذف جميع المنتجات
-// ==============================
 export async function deleteAllProducts() {
   await prisma.products.deleteMany({});
-  return {
-    success: true,
-    message: "All products deleted successfully",
-  };
+  return { success: true, message: "All products deleted successfully" };
 }

@@ -4,8 +4,8 @@ import { useState } from "react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { z } from "zod";
-import axios from "axios";
 import { tw } from "../twind";
+import { addProduct } from "./registerProductsFile"; // ← دالة الإضافة
 
 // --------------------
 // Zod Schema
@@ -17,21 +17,18 @@ const formSchema = z.object({
     .refine((name) => name === name.trim() && name.trim().length > 0, {
       message: "Product name must not start or end with spaces",
     }),
-
   owner: z
     .string()
     .min(1, "Owner is required")
     .refine((owner) => owner === owner.trim() && owner.trim().length > 0, {
       message: "Owner name must not start or end with spaces",
     }),
-
   count: z
     .string()
     .min(1, "Count is required")
     .refine((count) => count === count.trim() && count.trim().length > 0, {
       message: "Count must not start or end with spaces",
     }),
-
   category: z.enum(["clothes", "food", "health"]),
 });
 
@@ -41,33 +38,27 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 // --------------------
-// Validate all fields (onSubmit)
+// Validate all fields
 // --------------------
 const validateForm = (data: FormData) => {
   const parsed = formSchema.safeParse(data);
-
-  if (parsed.success) {
-    return { success: true as const, data: parsed.data };
-  }
+  if (parsed.success) return { success: true as const, data: parsed.data };
 
   const errors: Partial<Record<keyof FormData, string>> = {};
-
-  parsed.error.issues.forEach((issue: z.ZodIssue) => {
+  parsed.error.issues.forEach((issue) => {
     const key = issue.path[0] as keyof FormData;
     errors[key] = issue.message;
   });
-
   return { success: false as const, errors };
 };
 
 // --------------------
-// Validate one field (onBlur)
+// Validate single field
 // --------------------
 const validateField = (name: keyof FormData, value: string) => {
   const parsed = formSchema
     .pick({ [name]: true })
     .safeParse({ [name]: value });
-
   return parsed.success ? "" : parsed.error.issues[0]?.message ?? "";
 };
 
@@ -94,11 +85,7 @@ export default function ProductRegisterPage() {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   // --------------------
@@ -109,43 +96,45 @@ export default function ProductRegisterPage() {
   ) => {
     const { name, value } = e.target;
     const error = validateField(name as keyof FormData, value);
-
     setFieldErrors((prev) => ({ ...prev, [name]: error }));
   };
 
   // --------------------
-  // Submit handler
+  // Submit handler (تم التعديل لاستخدام addProduct)
   // --------------------
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusinessError("");
 
     const result = validateForm(formData);
-
     if (!result.success) {
       setFieldErrors(result.errors);
       return;
     }
 
     try {
-      const res = await axios.post("/api/products", result.data);
-      toast.success(res.data.message, { position: "top-center" });
-
-      setFormData({
-        name: "",
-        owner: "",
-        category: "clothes",
-        count: "",
+      const res = await addProduct({
+        name: formData.name,
+        owner: formData.owner,
+        category: formData.category,
+        count: Number(formData.count), // تحويل إلى رقم
       });
-      setFieldErrors({});
-    } catch (err: any) {
-      if (err.response) {
-        toast.error(err.response.data.message || `Server error ${err.response.status}`, { position: "top-center" });
-      } else if (err.request) {
-        toast.error("Network error: Server did not respond", { position: "top-center" });
+
+      if (res.success) {
+        toast.success(res.message, { position: "top-center" });
+
+        setFormData({
+          name: "",
+          owner: "",
+          category: "clothes",
+          count: "",
+        });
+        setFieldErrors({});
       } else {
-        toast.error(`Request error: ${err.message}`, { position: "top-center" });
+        toast.error(res.message || "Failed to add product", { position: "top-center" });
       }
+    } catch (err: any) {
+      toast.error(`Unexpected error: ${err.message}`, { position: "top-center" });
     }
   };
 

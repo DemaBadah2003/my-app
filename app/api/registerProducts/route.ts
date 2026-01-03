@@ -1,16 +1,15 @@
 import { NextResponse } from "next/server";
-import { registerUser } from "@/app/helpers/RegisterProductService";
+import { registerProducts } from "@/app/helpers/registerProductsService";
+import { ValidationError } from "yup";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const result = await registerUser(body);
+    const result = await registerProducts(body);
+    return NextResponse.json(result, { status: 200 });
 
-    return NextResponse.json(result.json, {
-      status: result.status,
-    });
   } catch (err: any) {
-    if (err.name === "ValidationError") {
+    if (err instanceof ValidationError) {
       return NextResponse.json(
         { errors: err.errors },
         { status: 422 }
@@ -18,7 +17,7 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json(
-      { error: err.message || "Bad Request" },
+      { error: "Invalid request" },
       { status: 400 }
     );
   }

@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server";
-import {readProducts,deleteProducts,deleteAllProducts,} from "@/app/helpers/productsService";
+import {
+  readProducts,
+  deleteProduct,
+  deleteAllProducts,
+  createProduct
+} from "@/app/helpers/productsService";
 
 export async function GET() {
-  console.log("GET /api/products");
-
   try {
     const products = await readProducts();
     return NextResponse.json({ products }, { status: 200 });
   } catch (err: any) {
-    console.error("Error fetching products:", err);
-    return NextResponse.json(
-      { error: err.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, message: err.message }, { status: 500 });
   }
 }
 
@@ -20,25 +19,34 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    if (body.action === "delete") {
-      return NextResponse.json(
-        await deleteProducts(body.data.id)
-      );
-    }
+    switch (body.action) {
+      // ✅ حذف منتج واحد
+      case "delete":
+        return NextResponse.json(
+          await deleteProduct(Number(body.productid))
+        );
 
-    if (body.action === "deleteAll") {
-      return NextResponse.json(
-        await deleteAllProducts()
-      );
-    }
+      // حذف كل المنتجات
+      case "deleteAll":
+  return NextResponse.json(await deleteAllProducts());
 
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Adding products is only allowed via register",
-      },
-      { status: 403 }
-    );
+
+      // إضافة منتج
+      case "add":
+        const { name, owner, category, count } = body.data;
+        const product = await createProduct(name, owner, category, count);
+        return NextResponse.json({
+          success: true,
+          product,
+          message: "Product added successfully",
+        });
+
+      default:
+        return NextResponse.json(
+          { success: false, message: "Action not allowed" },
+          { status: 403 }
+        );
+    }
   } catch (err: any) {
     return NextResponse.json(
       { success: false, message: err.message },
