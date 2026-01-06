@@ -11,14 +11,12 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    
     "prisma:test": "ts-node src/test.ts",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push",
-
-    "vercel-build": "prisma generate && next build"
+    "vercel-build": "dotenv -e .env prisma generate && next build"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
@@ -48,6 +46,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.4.23",
+    "dotenv-cli": "^11.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "postcss": "^8.5.6",
