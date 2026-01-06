@@ -12,14 +12,12 @@
     "start": "next start",
     "lint": "eslint",
     
-    // سكربتات Prisma
     "prisma:test": "ts-node src/test.ts",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "prisma:push": "prisma db push",
 
-    // سكربت خاص بـ Vercel
     "vercel-build": "prisma generate && next build"
   },
   "dependencies": {
