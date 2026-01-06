@@ -2,20 +2,25 @@
   "name": "my-app",
   "version": "0.1.0",
   "private": true,
+
+
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
+
   "scripts": {
     "dev": "node start-dev.js",
     "build": "next build",
     "start": "next start",
-
     "lint": "eslint",
     "prisma:test": "ts-node src/test.ts",
     "prisma:migrate": "prisma migrate dev",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
-    "prisma:push": "prisma db push",
-
-    "vercel-build": "npm install --legacy-peer-deps && next build"
+    "prisma:push": "prisma db push"
   },
+
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
@@ -36,6 +41,7 @@
     "yup": "^1.7.1",
     "zod": "^4.2.1"
   },
+
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/fs-extra": "^11.0.4",
