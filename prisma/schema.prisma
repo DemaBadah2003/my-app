@@ -15,7 +15,6 @@ model User {
 }
 
 model products {
-
   productid Int    @id @default(autoincrement())
   name      String @db.VarChar(150)
   category  String @db.VarChar(100)
