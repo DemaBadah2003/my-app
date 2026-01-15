@@ -4,20 +4,328 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+ 
 }
 
+//
+// ✅ المستخدمين
+// User = جدول المستخدم
+//
 model User {
+  // userId = رقم المستخدم (مفتاح أساسي)
   userId   Int    @id @default(autoincrement())
+  // name = الاسم
   name     String @db.VarChar(150)
+  // email = البريد الإلكتروني (مميز)
   email    String @unique @db.VarChar(150)
+  // phone = رقم الهاتف
   phone    String @db.VarChar(30)
+  // category = التصنيف
   category String
 }
 
-model products {
-  productid Int    @id @default(autoincrement())
-  name      String @db.VarChar(150)
-  category  String @db.VarChar(100)
-  owner     String @db.VarChar(150)
-  count     Int
+//
+// ✅ الموارد (بدل المنتجات)
+// Resource = جدول الموارد
+//
+model resources {
+  // resourceId = رقم المورد (مفتاح أساسي)
+  resourceId Int    @id @default(autoincrement())
+  // name = اسم المورد
+  name       String @db.VarChar(150)
+  // category = فئة المورد
+  category   String @db.VarChar(100)
+  // owner = الجهة/المالك
+  owner      String @db.VarChar(150)
+  // count = العدد/الكمية
+  count      Int
+
+  // علاقات
+  institutionResources InstitutionResource[]
+  distributions        Distribution[]
+}
+
+//
+// ✅ المؤسسات
+// Institution = جدول المؤسسات
+//
+model Institution {
+  // id = رقم المؤسسة (PK)
+  id           Int     @id @default(autoincrement())
+  // name = اسم المؤسسة
+  name         String  @db.VarChar(150)
+  // email = البريد (اختياري + مميز)
+  email        String? @unique @db.VarChar(150)
+  // type = نوع المؤسسة
+  type         String? @db.VarChar(100)
+  // availability = حالة التوافر/الجاهزية
+  availability String? @db.VarChar(50)
+
+  // علاقات
+  addresses            Address[]
+  contacts             Contact[]
+  institutionResources InstitutionResource[]
+  institutionServices  InstitutionService[]
+  distributions         Distribution[]
+}
+
+//
+// ✅ المشرفين
+// Supervisor = جدول المشرفين
+//
+model Supervisor {
+  // id = رقم المشرف
+  id    Int    @id @default(autoincrement())
+  // name = اسم المشرف
+  name  String @db.VarChar(150)
+  // phone = هاتف المشرف
+  phone String? @db.VarChar(30)
+
+  // علاقات
+  shelters      Shelter[]
+  healthCenters HealthCenter[]
+}
+
+//
+// ✅ الملاجئ
+// Shelter = جدول الملاجئ
+//
+model Shelter {
+  // id = رقم الملجأ
+  id           Int @id @default(autoincrement())
+  // supervisorId = رقم المشرف (FK)
+  supervisorId Int
+  // name = اسم الملجأ
+  name         String @db.VarChar(150)
+  // capacity = السعة
+  capacity     Int?
+
+  // علاقات
+  supervisor  Supervisor @relation(fields: [supervisorId], references: [id])
+  citizens    Citizen[]
+  addresses   Address[]
+  emergencies Emergency[]
+}
+
+//
+// ✅ المواطنين
+// Citizen = جدول المواطنين
+//
+model Citizen {
+  // id = رقم المواطن
+  id            Int     @id @default(autoincrement())
+  // fullName = الاسم
+  fullName      String  @db.VarChar(200)
+  // nationalId = الرقم القومي (اختياري + مميز)
+  nationalId    String? @unique @db.VarChar(50)
+  // phone = الهاتف
+  phone         String? @db.VarChar(30)
+  // familyMembers = عدد أفراد الأسرة
+  familyMembers Int?
+  // healthStatus = الحالة الصحية
+  healthStatus  String? @db.VarChar(150)
+
+  // shelterId = رقم الملجأ (اختياري)
+  shelterId Int?
+
+  // علاقات
+  shelter       Shelter?      @relation(fields: [shelterId], references: [id])
+  addresses     Address[]
+  contacts      Contact[]
+  distributions Distribution[]
+}
+
+//
+// ✅ ربط مؤسسة + مورد (بدل institution_product)
+// InstitutionResource = جدول ربط الموارد بالمؤسسات
+//
+model InstitutionResource {
+  // id = رقم السجل
+  id            Int @id @default(autoincrement())
+  // institutionId = رقم المؤسسة (FK)
+  institutionId Int
+  // resourceId = رقم المورد (FK)
+  resourceId    Int
+  // quantity = الكمية
+  quantity      Int?
+  // availability = حالة التوافر
+  availability  String? @db.VarChar(50)
+
+  // علاقات
+  institution Institution @relation(fields: [institutionId], references: [id])
+  resource    resources   @relation(fields: [resourceId], references: [resourceId])
+
+  @@unique([institutionId, resourceId])
+}
+
+//
+// ✅ العناوين
+// Address = جدول العناوين (للمؤسسة/المواطن/الملجأ)
+//
+model Address {
+  // id = رقم العنوان
+  id            Int @id @default(autoincrement())
+
+  // citizenId = يتبع مواطن (اختياري)
+  citizenId     Int?
+  // institutionId = يتبع مؤسسة (اختياري)
+  institutionId Int?
+  // shelterId = يتبع ملجأ (اختياري)
+  shelterId     Int?
+
+  // governorate = المحافظة
+  governorate String? @db.VarChar(100)
+  // city = المدينة
+  city         String? @db.VarChar(100)
+  // street = الشارع
+  street       String? @db.VarChar(150)
+  // district = الحي
+  district     String? @db.VarChar(150)
+  // details = تفاصيل إضافية
+  details      String? @db.VarChar(300)
+
+  // علاقات
+  citizen     Citizen?     @relation(fields: [citizenId], references: [id])
+  institution Institution? @relation(fields: [institutionId], references: [id])
+  shelter     Shelter?     @relation(fields: [shelterId], references: [id])
+
+  @@index([citizenId])
+  @@index([institutionId])
+  @@index([shelterId])
+}
+
+//
+// ✅ بيانات التواصل
+// Contact = جدول التواصل (للمؤسسة/المواطن)
+//
+model Contact {
+  // id = رقم التواصل
+  id            Int @id @default(autoincrement())
+  // citizenId = تابع لمواطن (اختياري)
+  citizenId     Int?
+  // institutionId = تابع لمؤسسة (اختياري)
+  institutionId Int?
+
+  // type = نوع التواصل (هاتف/إيميل/واتساب/غيره)
+  type  String @db.VarChar(30)
+  // value = القيمة (الرقم/الإيميل...)
+  value String @db.VarChar(200)
+
+  // علاقات
+  citizen     Citizen?     @relation(fields: [citizenId], references: [id])
+  institution Institution? @relation(fields: [institutionId], references: [id])
+
+  @@index([citizenId])
+  @@index([institutionId])
+}
+
+//
+// ✅ المراكز الصحية
+// HealthCenter = جدول المراكز الصحية
+//
+model HealthCenter {
+  // id = رقم المركز
+  id           Int @id @default(autoincrement())
+  // supervisorId = رقم المشرف (FK)
+  supervisorId Int
+  // name = اسم المركز
+  name         String @db.VarChar(150)
+  // location = الموقع/العنوان المختصر
+  location     String? @db.VarChar(200)
+
+  // علاقات
+  supervisor Supervisor @relation(fields: [supervisorId], references: [id])
+}
+
+//
+// ✅ الطوارئ
+// Emergency = جدول الطوارئ للملجأ
+//
+model Emergency {
+  // id = رقم الطوارئ
+  id          Int @id @default(autoincrement())
+  // shelterId = رقم الملجأ (FK)
+  shelterId   Int
+  // type = نوع الطوارئ
+  type        String? @db.VarChar(150)
+  // status = حالة الطوارئ
+  status      String? @db.VarChar(100)
+  // date = تاريخ الطوارئ
+  date        DateTime?
+  // description = وصف
+  description String? @db.VarChar(500)
+  // notes = ملاحظات
+  notes       String? @db.VarChar(500)
+
+  // علاقات
+  shelter Shelter @relation(fields: [shelterId], references: [id])
+}
+
+//
+// ✅ الخدمات
+// Service = جدول الخدمات
+//
+model Service {
+  // id = رقم الخدمة
+  id          Int    @id @default(autoincrement())
+  // type = نوع الخدمة
+  type        String @db.VarChar(150)
+  // sector = نوع القطاع (تعليم/صحة/أطفال/كبار...)
+  sector      String? @db.VarChar(150)
+  // description = وصف الخدمة
+  description String? @db.VarChar(500)
+
+  // علاقات
+  institutionServices InstitutionService[]
+}
+
+//
+// ✅ ربط مؤسسة + خدمة
+// InstitutionService = جدول ربط الخدمات بالمؤسسات
+//
+model InstitutionService {
+  // id = رقم السجل
+  id            Int @id @default(autoincrement())
+  // institutionId = رقم المؤسسة (FK)
+  institutionId Int
+  // serviceId = رقم الخدمة (FK)
+  serviceId     Int
+  // status = حالة الخدمة (متاحة/غير متاحة)
+  status        String? @db.VarChar(50)
+
+  // علاقات
+  institution Institution @relation(fields: [institutionId], references: [id])
+  service     Service     @relation(fields: [serviceId], references: [id])
+
+  @@unique([institutionId, serviceId])
+}
+
+//
+// ✅ التوزيعات
+// Distribution = جدول التوزيع (مؤسسة توزع موارد لمواطن)
+//
+model Distribution {
+  // id = رقم التوزيع
+  id            Int @id @default(autoincrement())
+  // institutionId = رقم المؤسسة (FK)
+  institutionId Int
+  // citizenId = رقم المواطن (FK)
+  citizenId     Int
+  // resourceId = رقم المورد (FK)
+  resourceId    Int
+  // quantity = الكمية
+  quantity      Int?
+  // date = تاريخ التوزيع
+  date          DateTime?
+  // notes = ملاحظات
+  notes         String? @db.VarChar(500)
+
+  // علاقات
+  institution Institution @relation(fields: [institutionId], references: [id])
+  citizen     Citizen     @relation(fields: [citizenId], references: [id])
+  resource    resources   @relation(fields: [resourceId], references: [resourceId])
+
+  @@index([institutionId])
+  @@index([citizenId])
+  @@index([resourceId])
 }
